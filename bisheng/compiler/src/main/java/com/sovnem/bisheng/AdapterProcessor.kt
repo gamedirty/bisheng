@@ -127,7 +127,7 @@ class AdapterProcessor : AbstractProcessor() {
                     .addStatement("return viewHolderToLayoutRes").build()
 
             val javaClass = TypeSpec.classBuilder(Constants.CLASS_NAME)
-                .addSuperinterface(Class.forName("com.sovnem.bisheng.IAdapterMap"))
+                .addSuperinterface(Class.forName(Constants.SUPER_ADAPTER_CLASS))
                 .addField(dataToTypeField)
                 .addField(typeToViewHolderField)
                 .addMethod(getdataToType)
