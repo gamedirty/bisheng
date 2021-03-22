@@ -1,4 +1,5 @@
 package com.sovnem.bisheng
+
 import kotlinx.android.synthetic.main.layout_people_item.view.*
 
 @VHRef(PeopleViewHolder::class)
