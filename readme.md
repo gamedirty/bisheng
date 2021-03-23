@@ -1,0 +1,7 @@
+# bisheng
+a library to make recyclerview easy to use
+
+因为项目里大量使用recyclerview，而同一个viewholder有时候会在多个页面被重用，一个viewholder对应一个datamodel，不同的页面只需要能共享这个映射关系就可以实现重用。
+由此联想到了活字印刷术，毕升是发明活字印刷术的人，这是这个库名称的由来。
+
+这个库旨在通过编译期注解的形式，极致减少编写一个recyclerview的adapter 时候需要编写的模板代码。
