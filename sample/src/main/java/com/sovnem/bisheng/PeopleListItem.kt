@@ -2,10 +2,10 @@ package com.sovnem.bisheng
 
 import kotlinx.android.synthetic.main.layout_people_item.view.*
 
-@VHRef(PeopleViewHolder::class)
+@VHRef(PeopleViewHolder::class, lazyLoad = false)
 data class PeopleListItem(val name: String, val age: Int)
 
-@VHLayoutId(R.layout.layout_people_item)
+@VHLayoutId(R.layout.layout_people_item, lazyLoad = false)
 class PeopleViewHolder : BiShengBaseVH<PeopleListItem>() {
     override fun bindData(
         data: PeopleListItem,

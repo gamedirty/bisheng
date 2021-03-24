@@ -5,3 +5,5 @@ a library to make recyclerview easy to use
 由此联想到了活字印刷术，毕升是发明活字印刷术的人，这是这个库名称的由来。
 
 这个库旨在通过编译期注解的形式，极致减少编写一个recyclerview的adapter 时候需要编写的模板代码。
+
+recyclerview的编写只需要编写

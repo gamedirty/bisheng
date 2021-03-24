@@ -4,4 +4,4 @@ import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
-annotation class VHRef(val ref: KClass<*>)
+annotation class VHRef(val ref: KClass<*>, val lazyLoad: Boolean = false)

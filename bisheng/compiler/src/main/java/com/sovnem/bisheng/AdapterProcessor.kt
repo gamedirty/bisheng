@@ -29,47 +29,40 @@ class AdapterProcessor : AbstractProcessor() {
         try {
             if (hasProceed) return false
 
-            /**
-             * 所有data的全名
-             */
             val holderClass = ArrayList<String>()
 
-            /**
-             * data和viewholder 全名映射
-             */
             val dataClassStrToVhRef = HashMap<String, String>()
 
-            /**
-             * viewholder全名和 res映射
-             */
             val vhResMap = HashMap<String, Int>()
 
-            /**
-             * data全名 和holdersimple
-             */
             val dataFullToHolderSimple = HashMap<String, String>()
-
             val vhSimpleToFull = HashMap<String, String>()
-
-
             roundEnvironment.getElementsAnnotatedWith(VHRef::class.java).forEach {
-                val dataClassName = elementUtil.getPackageOf(it).toString() + "." + it.simpleName
-                holderClass.add(dataClassName)
-                val anno = it.getAnnotation(VHRef::class.java).toString()
-                val strs = anno.split(".")
-                val holderName = strs[strs.size - 1].replace(")", "")
-                dataFullToHolderSimple.put(dataClassName, holderName)
+                val an = it.getAnnotation(VHRef::class.java)
+                println("蛤？：" + an.lazyLoad)
+                if (!an.lazyLoad) {
+                    val anno = an.toString()
+                    val dataClassName =
+                        elementUtil.getPackageOf(it).toString() + "." + it.simpleName
+                    holderClass.add(dataClassName)
+                    val strs = anno.split(".")
+                    val holderName = strs[strs.size - 1].replace(")", "")
+                    dataFullToHolderSimple[dataClassName] = holderName
+                }
+
             }
             roundEnvironment.getElementsAnnotatedWith(VHLayoutId::class.java).forEach {
-                val vhClassName = elementUtil.getPackageOf(it).toString() + "." + it.simpleName
-                vhSimpleToFull.put(it.simpleName.toString(), vhClassName)
-                vhResMap.put(vhClassName, it.getAnnotation(VHLayoutId::class.java).layoutId)
+                val ann = it.getAnnotation(VHLayoutId::class.java)
+                println("是不是lazy咯啊的L：" + ann.lazyLoad)
+                if (!ann.lazyLoad) {
+                    val vhClassName = elementUtil.getPackageOf(it).toString() + "." + it.simpleName
+                    vhSimpleToFull.put(it.simpleName.toString(), vhClassName)
+                    vhResMap.put(vhClassName, it.getAnnotation(VHLayoutId::class.java).layoutId)
+                }
             }
             holderClass.forEach {
                 dataClassStrToVhRef[it] = vhSimpleToFull[dataFullToHolderSimple[it]]!!
             }
-
-
             val constructor =
                 MethodSpec.constructorBuilder()
                     .apply {
