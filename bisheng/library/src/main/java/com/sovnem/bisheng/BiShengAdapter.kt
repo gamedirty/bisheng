@@ -14,7 +14,7 @@ class BiShengAdapter(
         list?.let { dataList.addAll(it) }
     }
 
-    private var delegate: AdapterDelegate = DefaultAdapterDelegate(onItemClickListener)
+    private var delegate: AdapterDelegate = AdapterDelegate(onItemClickListener)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return delegate.onCreateViewHolder(parent, viewType)
@@ -64,6 +64,10 @@ class BiShengAdapter(
     fun setOnItemClickListener(onItemClickListener: OnItemClickListener) {
         this.onItemClickListener = onItemClickListener
         (delegate as DefaultAdapterDelegate).onItemClickListener = onItemClickListener
+    }
+
+    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+        super.onViewRecycled(holder)
     }
 
 }

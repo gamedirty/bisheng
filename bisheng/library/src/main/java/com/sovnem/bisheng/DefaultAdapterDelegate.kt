@@ -6,9 +6,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import java.lang.IllegalStateException
 
-internal class DefaultAdapterDelegate(var onItemClickListener: OnItemClickListener?) : AdapterDelegate {
+internal class DefaultAdapterDelegate(var onItemClickListener: OnItemClickListener?) :
+    AdapterDelegate {
 
     private val adapterMap: IAdapterMap by lazy {
         Class.forName(Constants.PACKAGE + "." + Constants.CLASS_NAME).newInstance() as IAdapterMap
@@ -29,6 +29,13 @@ internal class DefaultAdapterDelegate(var onItemClickListener: OnItemClickListen
      * [ViewHolder,layoutRes]
      */
     private val vhLayoutMap by lazy { adapterMap.viewHolderToLayoutRes }
+
+    private val inflaterFactory: LayoutInflater.Factory by lazy {
+        LayoutInflater.Factory { name, context, attrs ->
+
+            return@Factory null
+        }
+    }
 
     override fun getItemViewType(any: Any): Int {
         val cacheType = typeMap[any.javaClass]
@@ -61,8 +68,9 @@ internal class DefaultAdapterDelegate(var onItemClickListener: OnItemClickListen
             (vhMap.get(viewType).getConstructor().newInstance() as BiShengBaseVH<*>).apply {
                 var content: View? = null
                 if (layoutId != null) {
-                    content = LayoutInflater.from(parent.context)
-                        .inflate(layoutId, null, false)
+                    content =
+                        LayoutInflater.from(parent.context)
+                            .inflate(layoutId, null, false)
                 }
                 if (content == null) {
                     content = onCreateView()

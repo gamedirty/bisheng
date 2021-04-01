@@ -11,5 +11,8 @@ class HullViewHolder<T>(private val bishengVhewHolder: BiShengBaseVH<T>) :
         onItemClickListener: OnItemClickListener? = null,
     ) {
         bishengVhewHolder.bindData(any as T, position, payloads, onItemClickListener)
+
     }
+
+
 }

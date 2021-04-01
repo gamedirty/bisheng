@@ -4,6 +4,13 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 
 interface AdapterDelegate {
+
+    companion object {
+        operator fun invoke(onItemClickListener: OnItemClickListener?): AdapterDelegate {
+            return DefaultAdapterDelegate(onItemClickListener)
+        }
+    }
+
     fun getItemViewType(any: Any): Int
 
     fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder
