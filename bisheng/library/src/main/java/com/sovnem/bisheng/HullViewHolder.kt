@@ -2,15 +2,15 @@ package com.sovnem.bisheng
 
 import androidx.recyclerview.widget.RecyclerView
 
-class HullViewHolder<T>(private val bishengVhewHolder: BiShengBaseVH<T>) :
-    RecyclerView.ViewHolder(bishengVhewHolder.containerView) {
+class HullViewHolder<T>(private val bishengViewHolder: BiShengBaseVH<T>) :
+    RecyclerView.ViewHolder(bishengViewHolder.containerView) {
     fun bindDataInternal(
         any: Any,
         position: Int,
         payloads: MutableList<Any>? = null,
         onItemClickListener: OnItemClickListener? = null,
     ) {
-        bishengVhewHolder.bindData(any as T, position, payloads, onItemClickListener)
+        bishengViewHolder.bindData(any as T, position, payloads, onItemClickListener)
 
     }
 

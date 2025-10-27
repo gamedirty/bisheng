@@ -39,12 +39,11 @@ class BiShengAdapter(
 
     override fun getItemCount() = dataList.size
 
-    fun addData(list: List<Any>?, hasLoadViewHolder: Boolean = false) {
-        val insertIndex =
-            if (hasLoadViewHolder) dataList.lastIndex else dataList.lastIndex + 1
+    fun addData(list: List<Any>?) {
         list?.let {
-            dataList.addAll(insertIndex, list)
-            notifyItemRangeChanged(insertIndex, dataList.size + 1)
+            val insertIndex = dataList.size
+            dataList.addAll(it)
+            notifyItemRangeInserted(insertIndex, it.size)
         }
     }
 

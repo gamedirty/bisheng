@@ -1,4 +1,4 @@
 object Deps {
 
-    const val kotlin_version: String="1.4.31"
+    const val kotlin_version: String="1.8.22"
 }

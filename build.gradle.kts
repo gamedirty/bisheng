@@ -2,10 +2,10 @@
 buildscript {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:4.1.2")
+        classpath("com.android.tools.build:gradle:7.4.2")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${Deps.kotlin_version}")
     }
 }
@@ -13,6 +13,6 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 }

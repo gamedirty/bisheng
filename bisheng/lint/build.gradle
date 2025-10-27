@@ -5,13 +5,19 @@ plugins {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_7
-    targetCompatibility = JavaVersion.VERSION_1_7
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
 
 jar {
     manifest {
-        attributes 'Lint-Registry-v2': 'butterknife.lint.LintRegistry'
+        attributes 'Lint-Registry-v2': 'com.sovnem.lint.LintRegistry'
     }
 }
 dependencies {
