@@ -14,6 +14,13 @@ android {
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
+        
+        // 配置kapt以使用正确的JVM目标
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = ["kapt.kotlin.generated": "$projectDir/build/generated/source/kapt/debug"]
+            }
+        }
     }
 
     buildTypes {
@@ -31,6 +38,13 @@ android {
     }
     buildFeatures {
         viewBinding true
+    }
+}
+
+// 确保所有Kotlin编译任务使用相同的JVM目标
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
 }
 

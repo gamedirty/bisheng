@@ -3,6 +3,6 @@ plugins{
 }
 
 repositories {
-    // 必不可少
-    jcenter()
+    mavenCentral()
+    google()
 }

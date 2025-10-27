@@ -3,23 +3,41 @@ package com.sovnem.bisheng
 import com.squareup.javapoet.*
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
+import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
+import javax.tools.Diagnostic
 
 class AdapterProcessor : AbstractProcessor() {
 
-    lateinit var mFiler: Filer
-    lateinit var elementUtil: Elements
+    private lateinit var mFiler: Filer
+    private lateinit var elementUtil: Elements
+    private lateinit var messager: Messager
 
-    var hasProceed = false
+    private var hasProceed = false
+    
     override fun init(p0: ProcessingEnvironment) {
         super.init(p0)
         mFiler = p0.filer
         elementUtil = p0.elementUtils
+        messager = p0.messager
+        log("BiSheng注解处理器初始化完成")
+    }
+    
+    private fun log(message: String) {
+        messager.printMessage(Diagnostic.Kind.NOTE, "[BiSheng] $message")
+    }
+    
+    private fun error(message: String) {
+        messager.printMessage(Diagnostic.Kind.ERROR, "[BiSheng Error] $message")
+    }
+    
+    private fun warning(message: String) {
+        messager.printMessage(Diagnostic.Kind.WARNING, "[BiSheng Warning] $message")
     }
 
     override fun process(
@@ -37,7 +55,12 @@ class AdapterProcessor : AbstractProcessor() {
 
             val dataFullToHolderSimple = HashMap<String, String>()
             val vhSimpleToFull = HashMap<String, String>()
-            roundEnvironment.getElementsAnnotatedWith(VHRef::class.java).forEach {
+            
+            // 处理VHRef注解
+            val vhRefElements = roundEnvironment.getElementsAnnotatedWith(VHRef::class.java)
+            log("找到 ${vhRefElements.size} 个@VHRef注解")
+            
+            vhRefElements.forEach {
                 val an = it.getAnnotation(VHRef::class.java)
                 if (!an.lazyLoad) {
                     val anno = an.toString()
@@ -47,19 +70,33 @@ class AdapterProcessor : AbstractProcessor() {
                     val strs = anno.split(".")
                     val holderName = strs[strs.size - 1].replace(")", "")
                     dataFullToHolderSimple[dataClassName] = holderName
+                    log("注册数据类: $dataClassName -> ViewHolder: $holderName")
                 }
-
             }
-            roundEnvironment.getElementsAnnotatedWith(VHLayoutId::class.java).forEach {
+            
+            // 处理VHLayoutId注解
+            val vhLayoutIdElements = roundEnvironment.getElementsAnnotatedWith(VHLayoutId::class.java)
+            log("找到 ${vhLayoutIdElements.size} 个@VHLayoutId注解")
+            
+            vhLayoutIdElements.forEach {
                 val ann = it.getAnnotation(VHLayoutId::class.java)
                 if (!ann.lazyLoad) {
                     val vhClassName = elementUtil.getPackageOf(it).toString() + "." + it.simpleName
-                    vhSimpleToFull.put(it.simpleName.toString(), vhClassName)
-                    vhResMap.put(vhClassName, it.getAnnotation(VHLayoutId::class.java).layoutId)
+                    vhSimpleToFull[it.simpleName.toString()] = vhClassName
+                    vhResMap[vhClassName] = ann.layoutId
+                    log("注册ViewHolder: $vhClassName, layoutId: ${ann.layoutId}")
                 }
             }
+            
+            // 建立映射关系
             holderClass.forEach {
-                dataClassStrToVhRef[it] = vhSimpleToFull[dataFullToHolderSimple[it]]!!
+                val vhName = dataFullToHolderSimple[it]
+                val vhFullName = vhSimpleToFull[vhName]
+                if (vhFullName == null) {
+                    error("无法找到ViewHolder: $vhName 的完整类名，请确保ViewHolder类也使用了@VHLayoutId注解")
+                    return@forEach
+                }
+                dataClassStrToVhRef[it] = vhFullName
             }
             val constructor =
                 MethodSpec.constructorBuilder()
@@ -130,12 +167,15 @@ class AdapterProcessor : AbstractProcessor() {
 
             try {
                 javaFile.writeTo(mFiler)
+                log("成功生成适配器映射类: ${Constants.PACKAGE}.${Constants.CLASS_NAME}")
+                log("共注册 ${holderClass.size} 个数据类型")
             } catch (e: Exception) {
-                System.err.println(e.javaClass.name)
+                error("生成代码失败: ${e.message}")
                 e.printStackTrace(System.err)
             }
             hasProceed = true
         } catch (e: Exception) {
+            error("注解处理过程出错: ${e.message}")
             e.printStackTrace(System.err)
         }
         return false
