@@ -19,6 +19,7 @@ RecyclerView 作为一个容器，就像是纸张；Adapter 作为数据和 View
 - ✅ **零样板代码** - 通过注解处理器自动生成适配器映射代码
 - ✅ **类型安全** - 编译时类型检查，避免运行时错误
 - ✅ **多类型支持** - 轻松支持多种数据类型的列表
+- ✅ **多模块支持** - 完美支持多 module 项目，自动合并类型映射 🆕
 - ✅ **DiffUtil 支持** - 高效的数据更新
 - ✅ **懒加载** - 支持运行时动态注册类型
 - ✅ **ViewBinding 支持** - 与最新的 Android 技术栈兼容
@@ -180,9 +181,9 @@ data class CustomItem(val text: String)
 
 class CustomViewHolder : BiShengBaseVH<CustomItem>() {
     
-    override fun onCreateView(): View {
+    override fun onCreateView(parent: ViewGroup): View {
         // 返回自定义创建的 View
-        return TextView(containerView.context).apply {
+        return TextView(parent.context).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -200,6 +201,76 @@ class CustomViewHolder : BiShengBaseVH<CustomItem>() {
     }
 }
 ```
+
+### 🏗️ 多模块项目支持
+
+BiSheng 完美支持多 module 项目！每个 module 可以独立定义自己的数据类型和 ViewHolder，运行时会自动合并。
+
+#### 配置方式
+
+在**每个需要使用 BiSheng 的 module** 中添加依赖：
+
+```kotlin
+// feature-user/build.gradle.kts
+plugins {
+    id("com.android.library")
+    kotlin("android")
+    kotlin("kapt")  // ⚠️ 必须添加
+}
+
+dependencies {
+    implementation(project(":bisheng:library"))
+    kapt(project(":bisheng:compiler"))  // ⚠️ 每个模块都要添加
+}
+```
+
+#### 使用示例
+
+**feature-user 模块：**
+
+```kotlin
+@VHRef(UserViewHolder::class)
+data class UserItem(val name: String)
+
+@VHLayoutId(R.layout.item_user)
+class UserViewHolder : BiShengBaseVH<UserItem>() {
+    // ...
+}
+```
+
+**feature-order 模块：**
+
+```kotlin
+@VHRef(OrderViewHolder::class)
+data class OrderItem(val orderId: String)
+
+@VHLayoutId(R.layout.item_order)
+class OrderViewHolder : BiShengBaseVH<OrderItem>() {
+    // ...
+}
+```
+
+**在 app 模块中混合使用：**
+
+```kotlin
+// 可以混合使用不同模块的数据类型！
+val mixedData = listOf(
+    UserItem("张三"),      // 来自 feature-user
+    OrderItem("ORD123"),   // 来自 feature-order
+    UserItem("李四"),      // 来自 feature-user
+    OrderItem("ORD124")    // 来自 feature-order
+)
+
+val adapter = BiShengAdapter(mixedData)
+```
+
+**工作原理：**
+
+1. 每个 module 生成唯一命名的映射类（如 `BiShengAdapterMapImpl_user`）
+2. 使用 Java ServiceLoader 自动发现所有模块的映射
+3. 运行时自动合并所有映射关系
+
+详细说明请查看 [多模块支持文档](多模块支持说明.md)。
 
 ### 🎛️ 配置选项
 
@@ -306,6 +377,15 @@ adapter.setData(newDataList, useDiffUtil = true)
 ```
 
 ## 📝 更新日志
+
+### v2.1.0 (2025-10-28)
+
+**🎉 多模块支持：**
+- ✅ **完美支持多 module 项目** - 每个模块自动生成唯一的映射类
+- ✅ **ServiceLoader 自动发现** - 运行时自动合并所有模块的类型映射
+- ✅ **零配置使用** - 只需在每个模块添加 kapt 依赖即可
+- ✅ **性能优化** - 修复反射 API 废弃警告
+- ✅ **向后兼容** - 单模块项目无需任何修改
 
 ### v2.0.0 (2025)
 

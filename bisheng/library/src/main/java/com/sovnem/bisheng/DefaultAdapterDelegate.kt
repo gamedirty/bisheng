@@ -11,32 +11,96 @@ import androidx.recyclerview.widget.RecyclerView
 internal class DefaultAdapterDelegate(var onItemClickListener: OnItemClickListener?) :
     AdapterDelegate {
 
-    private val adapterMap: IAdapterMap by lazy {
+    /**
+     * 使用 ServiceLoader 加载所有模块的适配器映射
+     * 支持多模块项目
+     */
+    private val adapterMaps: List<IAdapterMap> by lazy {
         try {
-            Class.forName(Constants.PACKAGE + "." + Constants.CLASS_NAME).newInstance() as IAdapterMap
+            val loader = java.util.ServiceLoader.load(
+                IAdapterMap::class.java, 
+                IAdapterMap::class.java.classLoader
+            )
+            val maps = loader.toList()
+            
+            if (maps.isEmpty()) {
+                // 如果 ServiceLoader 没找到，尝试加载默认类（向后兼容）
+                try {
+                    val defaultMap = Class.forName(Constants.PACKAGE + "." + Constants.CLASS_NAME)
+                        .getDeclaredConstructor()
+                        .newInstance() as IAdapterMap
+                    listOf(defaultMap)
+                } catch (e: Exception) {
+                    throw IllegalStateException(
+                        "无法找到任何适配器映射类。\n" +
+                        "请确保已经正确配置 kapt 注解处理器，并且至少有一个数据类使用了 @VHRef 注解。\n" +
+                        "如果使用多模块项目，请确保每个模块都正确配置了 kapt。", e
+                    )
+                }
+            } else {
+                if (BiShengConfig.isDebugMode) {
+                    Log.d(TAG, "通过 ServiceLoader 加载了 ${maps.size} 个模块的适配器映射")
+                }
+                maps
+            }
         } catch (e: Exception) {
             throw IllegalStateException(
-                "无法找到生成的适配器映射类: ${Constants.PACKAGE}.${Constants.CLASS_NAME}。" +
-                "请确保已经正确配置kapt注解处理器，并且至少有一个数据类使用了@VHRef注解。", e
+                "加载适配器映射时出错: ${e.message}\n" +
+                "请检查项目配置和注解处理器是否正常工作。", e
             )
         }
     }
 
     /**
      * [data,itemType]
+     * 合并所有模块的类型映射
      */
-    private val typeMap: ArrayMap<Class<*>, Int> by lazy { adapterMap.dataToType }
+    private val typeMap: ArrayMap<Class<*>, Int> by lazy {
+        val mergedMap = ArrayMap<Class<*>, Int>()
+        adapterMaps.forEach { map ->
+            mergedMap.putAll(map.dataToType)
+        }
+        if (BiShengConfig.isDebugMode) {
+            Log.d(TAG, "合并后的类型映射共 ${mergedMap.size} 个")
+        }
+        mergedMap
+    }
 
     /**
      * [itemType,ViewHolder]
+     * 合并所有模块的 ViewHolder 映射
      */
-    private val vhMap: SparseArray<Class<*>> by lazy { adapterMap.typeToViewHolder }
+    private val vhMap: SparseArray<Class<*>> by lazy {
+        val mergedMap = SparseArray<Class<*>>()
+        adapterMaps.forEach { map ->
+            val typeToVH = map.typeToViewHolder
+            for (i in 0 until typeToVH.size()) {
+                val key = typeToVH.keyAt(i)
+                val value = typeToVH.valueAt(i)
+                mergedMap.put(key, value)
+            }
+        }
+        if (BiShengConfig.isDebugMode) {
+            Log.d(TAG, "合并后的 ViewHolder 映射共 ${mergedMap.size()} 个")
+        }
+        mergedMap
+    }
 
 
     /**
      * [ViewHolder,layoutRes]
+     * 合并所有模块的布局资源映射
      */
-    private val vhLayoutMap by lazy { adapterMap.viewHolderToLayoutRes }
+    private val vhLayoutMap: ArrayMap<Class<*>, Int> by lazy {
+        val mergedMap = ArrayMap<Class<*>, Int>()
+        adapterMaps.forEach { map ->
+            mergedMap.putAll(map.viewHolderToLayoutRes)
+        }
+        if (BiShengConfig.isDebugMode) {
+            Log.d(TAG, "合并后的布局映射共 ${mergedMap.size} 个")
+        }
+        mergedMap
+    }
 
     companion object {
         private const val TAG = BiShengConfig.TAG

@@ -1,6 +1,7 @@
 package com.sovnem.bisheng
 
 import com.squareup.javapoet.*
+import java.io.File
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
@@ -11,12 +12,16 @@ import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
 import javax.tools.Diagnostic
+import javax.tools.StandardLocation
 
 class AdapterProcessor : AbstractProcessor() {
 
     private lateinit var mFiler: Filer
     private lateinit var elementUtil: Elements
     private lateinit var messager: Messager
+    
+    // 用于生成唯一的类名（支持多模块）
+    private var moduleIdentifier: String = ""
 
     private var hasProceed = false
     
@@ -25,7 +30,43 @@ class AdapterProcessor : AbstractProcessor() {
         mFiler = p0.filer
         elementUtil = p0.elementUtils
         messager = p0.messager
+        
+        // 获取模块标识符（基于构建路径）
+        moduleIdentifier = generateModuleIdentifier(p0)
+        
         log("BiSheng注解处理器初始化完成")
+        log("模块标识符: $moduleIdentifier")
+    }
+    
+    /**
+     * 生成模块唯一标识符
+     * 基于模块的输出路径生成一个唯一的标识符
+     */
+    private fun generateModuleIdentifier(env: ProcessingEnvironment): String {
+        return try {
+            // 尝试从编译参数中获取模块名
+            val moduleName = env.options["kapt.kotlin.generated"] 
+                ?: env.options["org.gradle.appname"]
+            
+            if (moduleName != null) {
+                // 清理模块名，只保留字母数字和下划线
+                val cleanName = moduleName
+                    .substringAfterLast(File.separator)
+                    .substringAfterLast("/")
+                    .replace(Regex("[^a-zA-Z0-9_]"), "_")
+                    .take(20)
+                if (cleanName.isNotEmpty()) {
+                    return cleanName
+                }
+            }
+            
+            // 如果无法获取模块名，使用时间戳的 hash
+            val timestamp = System.currentTimeMillis()
+            "Module_${(timestamp % 100000).toString().padStart(5, '0')}"
+        } catch (e: Exception) {
+            log("无法生成模块标识符，使用默认值: ${e.message}")
+            ""
+        }
     }
     
     private fun log(message: String) {
@@ -38,6 +79,29 @@ class AdapterProcessor : AbstractProcessor() {
     
     private fun warning(message: String) {
         messager.printMessage(Diagnostic.Kind.WARNING, "[BiSheng Warning] $message")
+    }
+    
+    /**
+     * 生成 ServiceLoader 配置文件
+     * 用于自动发现多模块中的映射实现
+     */
+    private fun generateServiceLoaderConfig(className: String) {
+        try {
+            val serviceFile = mFiler.createResource(
+                StandardLocation.CLASS_OUTPUT,
+                "",
+                "META-INF/services/${Constants.PACKAGE}.IAdapterMap"
+            )
+            
+            serviceFile.openWriter().use { writer ->
+                writer.write("${Constants.PACKAGE}.$className")
+            }
+            
+            log("成功生成 ServiceLoader 配置文件")
+        } catch (e: Exception) {
+            // 如果文件已存在或生成失败，只记录警告，不影响主流程
+            warning("生成 ServiceLoader 配置文件失败: ${e.message}")
+        }
     }
 
     override fun process(
@@ -196,7 +260,14 @@ class AdapterProcessor : AbstractProcessor() {
                     .addStatement("return viewHolderToLayoutRes")
                     .build()
 
-            val javaClass = TypeSpec.classBuilder(Constants.CLASS_NAME)
+            // 生成唯一的类名（支持多模块）
+            val uniqueClassName = if (moduleIdentifier.isNotEmpty()) {
+                "${Constants.CLASS_NAME}_$moduleIdentifier"
+            } else {
+                Constants.CLASS_NAME
+            }
+            
+            val javaClass = TypeSpec.classBuilder(uniqueClassName)
                 .addSuperinterface(ClassName.get(Constants.PACKAGE, "IAdapterMap"))
                 .addField(dataToTypeField)
                 .addField(typeToViewHolderField)
@@ -211,8 +282,11 @@ class AdapterProcessor : AbstractProcessor() {
 
             try {
                 javaFile.writeTo(mFiler)
-                log("成功生成适配器映射类: ${Constants.PACKAGE}.${Constants.CLASS_NAME}")
+                log("成功生成适配器映射类: ${Constants.PACKAGE}.$uniqueClassName")
                 log("共注册 ${holderClass.size} 个数据类型")
+                
+                // 生成 ServiceLoader 配置文件
+                generateServiceLoaderConfig(uniqueClassName)
             } catch (e: Exception) {
                 error("生成代码失败: ${e.message}")
                 e.printStackTrace(System.err)
