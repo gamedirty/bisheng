@@ -44,25 +44,33 @@ class AdapterProcessor : AbstractProcessor() {
      */
     private fun generateModuleIdentifier(env: ProcessingEnvironment): String {
         return try {
-            // 尝试从编译参数中获取模块名
-            val moduleName = env.options["kapt.kotlin.generated"] 
-                ?: env.options["org.gradle.appname"]
+            // 尝试从编译参数中获取模块路径
+            val kaptGenerated = env.options["kapt.kotlin.generated"]
             
-            if (moduleName != null) {
-                // 清理模块名，只保留字母数字和下划线
-                val cleanName = moduleName
-                    .substringAfterLast(File.separator)
-                    .substringAfterLast("/")
-                    .replace(Regex("[^a-zA-Z0-9_]"), "_")
-                    .take(20)
-                if (cleanName.isNotEmpty()) {
-                    return cleanName
+            if (kaptGenerated != null) {
+                // 从路径中提取模块名
+                // 例如: /path/to/project/feature-user/build/generated/source/kapt/debug
+                // 提取 feature-user
+                val pathParts = kaptGenerated.split(File.separator)
+                
+                // 查找 build 之前的部分作为模块名
+                val buildIndex = pathParts.indexOfLast { it == "build" }
+                if (buildIndex > 0) {
+                    val moduleName = pathParts[buildIndex - 1]
+                    // 清理模块名，只保留字母数字和下划线
+                    val cleanName = moduleName
+                        .replace("-", "_")
+                        .replace(Regex("[^a-zA-Z0-9_]"), "_")
+                        .take(30)
+                    if (cleanName.isNotEmpty() && cleanName != "bisheng") {
+                        log("从路径提取模块名: $cleanName")
+                        return cleanName
+                    }
                 }
             }
             
-            // 如果无法获取模块名，使用时间戳的 hash
-            val timestamp = System.currentTimeMillis()
-            "Module_${(timestamp % 100000).toString().padStart(5, '0')}"
+            // 如果无法获取模块名，使用默认值
+            ""
         } catch (e: Exception) {
             log("无法生成模块标识符，使用默认值: ${e.message}")
             ""
@@ -124,17 +132,37 @@ class AdapterProcessor : AbstractProcessor() {
             val vhRefElements = roundEnvironment.getElementsAnnotatedWith(VHRef::class.java)
             log("找到 ${vhRefElements.size} 个@VHRef注解")
             
-            vhRefElements.forEach {
-                val an = it.getAnnotation(VHRef::class.java)
+            vhRefElements.forEach { element ->
+                val an = element.getAnnotation(VHRef::class.java)
                 if (!an.lazyLoad) {
-                    val anno = an.toString()
                     val dataClassName =
-                        elementUtil.getPackageOf(it).toString() + "." + it.simpleName
+                        elementUtil.getPackageOf(element).toString() + "." + element.simpleName
                     holderClass.add(dataClassName)
-                    val strs = anno.split(".")
-                    val holderName = strs[strs.size - 1].replace(")", "")
-                    dataFullToHolderSimple[dataClassName] = holderName
-                    log("注册数据类: $dataClassName -> ViewHolder: $holderName")
+                    
+                    // 从注解中获取 ViewHolder 类名
+                    // 使用 AnnotationMirror 来正确获取类型信息
+                    try {
+                        val annotationMirrors = element.annotationMirrors
+                        for (mirror in annotationMirrors) {
+                            if (mirror.annotationType.toString() == VHRef::class.java.name) {
+                                for ((key, value) in mirror.elementValues) {
+                                    if (key.simpleName.toString() == "ref") {
+                                        val vhTypeString = value.value.toString()
+                                        // 提取类名（去掉 .class 后缀）
+                                        val vhClassName = vhTypeString.removeSuffix(".class")
+                                        val vhSimpleName = vhClassName.substringAfterLast(".")
+                                        dataFullToHolderSimple[dataClassName] = vhSimpleName
+                                        log("注册数据类: $dataClassName -> ViewHolder: $vhSimpleName")
+                                        break
+                                    }
+                                }
+                                break
+                            }
+                        }
+                    } catch (e: Exception) {
+                        error("解析注解时出错: ${e.message}")
+                        e.printStackTrace(System.err)
+                    }
                 }
             }
             

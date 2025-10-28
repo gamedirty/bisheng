@@ -52,8 +52,11 @@ enum class UserStatus(val displayName: String, val color: Int) {
 /**
  * 用户 ViewHolder
  * 展示生命周期回调和 Payload 增量更新
+ * 
+ * 注意：在多模块项目中，由于 R 类跨模块问题，
+ * 我们使用 onCreateView() 手动加载布局，而不是在注解中指定 layoutId
  */
-@VHLayoutId(lazyLoad = true)
+@VHLayoutId(0)  // 使用 0 表示没有布局ID，通过 onCreateView() 加载
 class UserViewHolder : BiShengBaseVH<UserItem>() {
     
     private val binding: ItemUserBinding by lazy {
@@ -95,7 +98,7 @@ class UserViewHolder : BiShengBaseVH<UserItem>() {
             
             // 设置点击事件
             root.setOnClickListener {
-                onItemClickListener?.invoke(ItemClickEvent(data, position))
+                onItemClickListener?.onItemClick(ItemClickEvent(data, position))
             }
         }
     }

@@ -65,8 +65,13 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.material)
     
+    // BiSheng
     implementation(project(":bisheng:library"))
     kapt(project(":bisheng:compiler"))
+    
+    // Feature 模块
+    implementation(project(":feature-user"))
+    implementation(project(":feature-product"))
     
     // Testing
     testImplementation(libs.bundles.testing)
