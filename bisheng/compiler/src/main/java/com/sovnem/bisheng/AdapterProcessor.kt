@@ -104,6 +104,32 @@ class AdapterProcessor : AbstractProcessor() {
                 }
                 dataClassStrToVhRef[it] = vhFullName
             }
+            // 使用 ClassName 代替 Class.forName，提高类型安全性
+            val arrayMapType = ClassName.get("android.util", "ArrayMap")
+            val sparseArrayType = ClassName.get("android.util", "SparseArray")
+            val classType = ClassName.get("java.lang", "Class")
+            val integerType = ClassName.get("java.lang", "Integer")
+            
+            // 泛型类型：ArrayMap<Class<?>, Integer>
+            val arrayMapClassIntType = ParameterizedTypeName.get(
+                arrayMapType,
+                ParameterizedTypeName.get(classType, WildcardTypeName.subtypeOf(TypeName.OBJECT)),
+                integerType
+            )
+            
+            // 泛型类型：SparseArray<Class<?>>
+            val sparseArrayClassType = ParameterizedTypeName.get(
+                sparseArrayType,
+                ParameterizedTypeName.get(classType, WildcardTypeName.subtypeOf(TypeName.OBJECT))
+            )
+            
+            // 泛型类型：ArrayMap<Class<?>, Integer>
+            val arrayMapClassIntType2 = ParameterizedTypeName.get(
+                arrayMapType,
+                ParameterizedTypeName.get(classType, WildcardTypeName.subtypeOf(TypeName.OBJECT)),
+                integerType
+            )
+            
             val constructor =
                 MethodSpec.constructorBuilder()
                     .apply {
@@ -111,64 +137,83 @@ class AdapterProcessor : AbstractProcessor() {
                             val vhFullName = dataClassStrToVhRef[it]
                             val resId = vhResMap[vhFullName]
                             addStatement(
-                                "dataToType.put($it.class,$it.class.hashCode())"
+                                "dataToType.put(\$T.class, \$T.class.hashCode())",
+                                ClassName.bestGuess(it),
+                                ClassName.bestGuess(it)
                             )
                             addStatement(
-                                "typeToViewHolder.put($it.class.hashCode(), $vhFullName.class)"
+                                "typeToViewHolder.put(\$T.class.hashCode(), \$T.class)",
+                                ClassName.bestGuess(it),
+                                ClassName.bestGuess(vhFullName!!)
                             )
-                            addStatement("viewHolderToLayoutRes.put($vhFullName.class,$resId)")
+                            if (resId != null && resId != 0) {
+                                addStatement(
+                                    "viewHolderToLayoutRes.put(\$T.class, \$L)",
+                                    ClassName.bestGuess(vhFullName),
+                                    resId
+                                )
+                            }
                         }
                     }.addModifiers(Modifier.PUBLIC).build()
 
             val getdataToType =
-                MethodSpec.methodBuilder("getDataToType").addAnnotation(Override::class.java)
-                    .addModifiers(Modifier.PUBLIC).returns(Class.forName("android.util.ArrayMap"))
-                    .addStatement("return dataToType").build()
+                MethodSpec.methodBuilder("getDataToType")
+                    .addAnnotation(Override::class.java)
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(arrayMapClassIntType)
+                    .addStatement("return dataToType")
+                    .build()
 
             val dataToTypeField = FieldSpec.builder(
-                Class.forName("android.util.ArrayMap"),
+                arrayMapClassIntType,
                 "dataToType",
                 Modifier.PROTECTED
-            ).initializer(CodeBlock.of("new ArrayMap<Class<?>, Integer>()")).build()
+            ).initializer("new \$T<>()", arrayMapType).build()
 
 
             val typeToViewHolderField = FieldSpec.builder(
-                Class.forName("android.util.SparseArray"),
+                sparseArrayClassType,
                 "typeToViewHolder",
                 Modifier.PROTECTED
-            ).initializer(CodeBlock.of("new SparseArray<Class<?>>()"))
+            ).initializer("new \$T<>()", sparseArrayType)
                 .build()
 
             val getTypeToViewHolder =
-                MethodSpec.methodBuilder("getTypeToViewHolder").addAnnotation(Override::class.java)
+                MethodSpec.methodBuilder("getTypeToViewHolder")
+                    .addAnnotation(Override::class.java)
                     .addModifiers(Modifier.PUBLIC)
-                    .returns(Class.forName("android.util.SparseArray"))
-                    .addStatement("return typeToViewHolder").build()
+                    .returns(sparseArrayClassType)
+                    .addStatement("return typeToViewHolder")
+                    .build()
 
 
             val viewHolderToLayoutResField =
                 FieldSpec.builder(
-                    Class.forName("android.util.ArrayMap"),
+                    arrayMapClassIntType2,
                     "viewHolderToLayoutRes",
                     Modifier.PROTECTED
-                ).initializer(CodeBlock.of("new ArrayMap<Class<?>, Integer>()"))
+                ).initializer("new \$T<>()", arrayMapType)
                     .build()
 
             val getViewHolderToLayout =
                 MethodSpec.methodBuilder("getViewHolderToLayoutRes")
                     .addAnnotation(Override::class.java)
-                    .addModifiers(Modifier.PUBLIC).returns(Class.forName("android.util.ArrayMap"))
-                    .addStatement("return viewHolderToLayoutRes").build()
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(arrayMapClassIntType2)
+                    .addStatement("return viewHolderToLayoutRes")
+                    .build()
 
             val javaClass = TypeSpec.classBuilder(Constants.CLASS_NAME)
-                .addSuperinterface(Class.forName(Constants.SUPER_ADAPTER_CLASS))
+                .addSuperinterface(ClassName.get(Constants.PACKAGE, "IAdapterMap"))
                 .addField(dataToTypeField)
                 .addField(typeToViewHolderField)
+                .addField(viewHolderToLayoutResField)
+                .addMethod(constructor)
                 .addMethod(getdataToType)
                 .addMethod(getTypeToViewHolder)
                 .addMethod(getViewHolderToLayout)
-                .addField(viewHolderToLayoutResField)
-                .addModifiers(Modifier.PUBLIC).addMethod(constructor).build()
+                .addModifiers(Modifier.PUBLIC)
+                .build()
             val javaFile = JavaFile.builder(Constants.PACKAGE, javaClass).build()
 
             try {

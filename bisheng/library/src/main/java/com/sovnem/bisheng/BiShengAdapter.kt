@@ -163,7 +163,21 @@ class BiShengAdapter(
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         super.onViewRecycled(holder)
         if (holder is HullViewHolder<*>) {
-            // 可以在这里添加清理逻辑
+            holder.onViewRecycledInternal()
+        }
+    }
+    
+    override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        if (holder is HullViewHolder<*>) {
+            holder.onViewAttachedToWindowInternal()
+        }
+    }
+    
+    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+        super.onViewDetachedFromWindow(holder)
+        if (holder is HullViewHolder<*>) {
+            holder.onViewDetachedFromWindowInternal()
         }
     }
 

@@ -60,5 +60,71 @@ abstract class BiShengBaseVH<T> {
     open fun onCreateView(parent: android.view.ViewGroup): View? {
         return null
     }
+    
+    /**
+     * 当 ViewHolder 被回收时调用
+     * 
+     * 可以在此方法中释放资源、取消订阅、清理引用等
+     * 
+     * 使用示例：
+     * ```kotlin
+     * override fun onViewRecycled() {
+     *     // 取消图片加载
+     *     imageLoader.cancel(binding.imageView)
+     *     // 清理动画
+     *     binding.root.clearAnimation()
+     * }
+     * ```
+     */
+    open fun onViewRecycled() {
+        // 子类可重写此方法进行清理
+    }
+    
+    /**
+     * 当 ViewHolder 附加到窗口时调用
+     * 
+     * 可以在此方法中启动动画、开始监听等
+     * 
+     * 使用示例：
+     * ```kotlin
+     * override fun onViewAttachedToWindow() {
+     *     // 启动动画
+     *     binding.root.startAnimation(fadeInAnimation)
+     * }
+     * ```
+     */
+    open fun onViewAttachedToWindow() {
+        // 子类可重写此方法
+    }
+    
+    /**
+     * 当 ViewHolder 从窗口分离时调用
+     * 
+     * 可以在此方法中停止动画、暂停视频播放等
+     * 
+     * 使用示例：
+     * ```kotlin
+     * override fun onViewDetachedFromWindow() {
+     *     // 停止动画
+     *     binding.root.clearAnimation()
+     *     // 暂停视频
+     *     videoPlayer.pause()
+     * }
+     * ```
+     */
+    open fun onViewDetachedFromWindow() {
+        // 子类可重写此方法
+    }
+    
+    /**
+     * 当 ViewHolder 绑定失败时调用
+     * 
+     * 可以在此方法中处理绑定异常，显示错误状态等
+     * 
+     * @param e 绑定时发生的异常
+     */
+    open fun onBindFailed(e: Exception) {
+        // 子类可重写此方法处理绑定失败
+    }
 
 }

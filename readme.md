@@ -201,12 +201,74 @@ class CustomViewHolder : BiShengBaseVH<CustomItem>() {
 }
 ```
 
+### 🎛️ 配置选项
+
+BiSheng 提供了全局配置来控制日志和行为：
+
+```kotlin
+// 在 Application 中配置
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        
+        // 启用调试模式，输出详细日志
+        BiShengConfig.isDebugMode = BuildConfig.DEBUG
+        
+        // 启用严格模式，进行更严格的运行时检查
+        BiShengConfig.isStrictMode = BuildConfig.DEBUG
+    }
+}
+```
+
+### 🔄 ViewHolder 生命周期回调
+
+BiSheng 支持 ViewHolder 生命周期回调，方便管理资源：
+
+```kotlin
+@VHLayoutId(R.layout.item_video)
+class VideoViewHolder : BiShengBaseVH<VideoItem>() {
+    
+    private val videoPlayer = VideoPlayer()
+    
+    override fun bindData(
+        data: VideoItem,
+        position: Int,
+        payloads: MutableList<Any>?,
+        onItemClickListener: OnItemClickListener?
+    ) {
+        videoPlayer.load(data.videoUrl)
+    }
+    
+    // 当 ViewHolder 被回收时调用
+    override fun onViewRecycled() {
+        videoPlayer.release()
+    }
+    
+    // 当 ViewHolder 附加到窗口时调用
+    override fun onViewAttachedToWindow() {
+        videoPlayer.resume()
+    }
+    
+    // 当 ViewHolder 从窗口分离时调用
+    override fun onViewDetachedFromWindow() {
+        videoPlayer.pause()
+    }
+    
+    // 当绑定失败时调用
+    override fun onBindFailed(e: Exception) {
+        // 显示错误状态
+        binding.errorView.visibility = View.VISIBLE
+    }
+}
+```
+
 ## 🔧 注意事项
 
-1. **必须配置 kapt**：确保在 app 模块中添加了 `kapt` 插件
+1. **必须配置 kapt**：确保在 app 模块中添加了 `kapt` 插件（如果不使用懒加载模式）
 2. **ViewHolder 必须有无参构造函数**：ViewHolder 类不能是内部类或抽象类
 3. **数据类必须使用 @VHRef 注解**：每个数据类都需要指定对应的 ViewHolder
 4. **ViewHolder 必须继承 BiShengBaseVH**：并使用泛型指定数据类型
+5. **调试建议**：开发时启用 `BiShengConfig.isDebugMode` 查看详细日志
 
 ### 💡 增强的 DiffUtil 支持
 
@@ -246,6 +308,8 @@ adapter.setData(newDataList, useDiffUtil = true)
 ## 📝 更新日志
 
 ### v2.0.0 (2025)
+
+**高优先级改进：**
 - ✅ 升级到 Kotlin 1.9.22
 - ✅ 升级到 Android SDK 34
 - ✅ 升级 Gradle 到 8.9，AGP 到 8.2.2
@@ -255,6 +319,23 @@ adapter.setData(newDataList, useDiffUtil = true)
 - ✅ 注解改为 RUNTIME 保留，支持更灵活的使用场景
 - ✅ 改进 `onCreateView()` 方法签名，传入 parent 参数
 - ✅ 优化依赖版本管理
+
+**中优先级改进：**
+- ✅ 优化注解处理器代码质量 - 使用 JavaPoet 的 ClassName API
+- ✅ 添加 ViewHolder 完整生命周期回调
+  - `onViewRecycled()` - ViewHolder 被回收时
+  - `onViewAttachedToWindow()` - ViewHolder 附加到窗口时
+  - `onViewDetachedFromWindow()` - ViewHolder 从窗口分离时
+  - `onBindFailed(Exception)` - 绑定失败时
+- ✅ 改进错误处理和日志系统
+  - 添加详细的错误信息和解决建议
+  - 支持调试模式 - `BiShengConfig.isDebugMode`
+  - 支持严格模式 - `BiShengConfig.isStrictMode`
+  - 条件日志输出，避免生产环境性能损失
+- ✅ 增强类型安全性
+  - 编译时类型检查优化
+  - 运行时验证 ViewHolder 合法性
+  - 更好的异常提示信息
 
 ### v1.0.0
 - ✅ 升级到 Kotlin 1.8.22
