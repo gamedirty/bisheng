@@ -54,9 +54,10 @@ abstract class BiShengBaseVH<T> {
      * 
      * 当不使用 @VHLayoutId 注解指定布局时，可以重写此方法返回自定义创建的 View
      * 
+     * @param parent 父容器，用于获取 Context 和创建 View
      * @return 自定义创建的 View，如果返回 null 则必须使用 @VHLayoutId 注解
      */
-    open fun onCreateView(): View? {
+    open fun onCreateView(parent: android.view.ViewGroup): View? {
         return null
     }
 

@@ -19,5 +19,5 @@ import kotlin.reflect.KClass
  * ```
  */
 @Target(AnnotationTarget.CLASS)
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.RUNTIME)
 annotation class VHRef(val ref: KClass<*>, val lazyLoad: Boolean = false)

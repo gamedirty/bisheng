@@ -14,6 +14,13 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     }
 }
 
+tasks.withType<Jar> {
+    manifest {
+        attributes["Lint-Registry-v2"] = "com.sovnem.lint.LintRegistry"
+    }
+}
+
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:${Deps.kotlin_version}")
 }
+

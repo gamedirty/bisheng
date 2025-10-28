@@ -83,8 +83,14 @@ class AdapterProcessor : AbstractProcessor() {
                 if (!ann.lazyLoad) {
                     val vhClassName = elementUtil.getPackageOf(it).toString() + "." + it.simpleName
                     vhSimpleToFull[it.simpleName.toString()] = vhClassName
-                    vhResMap[vhClassName] = ann.layoutId
-                    log("注册ViewHolder: $vhClassName, layoutId: ${ann.layoutId}")
+                    val layoutId = ann.layoutId
+                    // 跳过无效的 layoutId（KAPT stub 生成时可能为 0）
+                    if (layoutId != 0) {
+                        vhResMap[vhClassName] = layoutId
+                        log("注册ViewHolder: $vhClassName, layoutId: $layoutId")
+                    } else {
+                        warning("ViewHolder $vhClassName 的 layoutId 为 0，将在运行时通过反射获取")
+                    }
                 }
             }
             

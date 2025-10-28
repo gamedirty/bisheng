@@ -114,7 +114,7 @@ internal class DefaultAdapterDelegate(var onItemClickListener: OnItemClickListen
                 }
             }
             if (content == null) {
-                content = onCreateView()
+                content = onCreateView(parent)
             }
             if (content == null) {
                 throw IllegalStateException(

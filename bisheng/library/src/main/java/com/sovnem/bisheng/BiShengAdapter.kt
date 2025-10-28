@@ -168,7 +168,11 @@ class BiShengAdapter(
     }
 
     /**
-     * DiffUtil回调实现
+     * DiffUtil 回调实现
+     * 
+     * 支持两种比较模式：
+     * 1. 如果数据类实现了 BiShengDiffable 接口，使用其自定义的比较逻辑
+     * 2. 否则，使用默认的 equals() 方法比较
      */
     private class BiShengDiffCallback(
         private val oldList: List<Any>,
@@ -182,12 +186,59 @@ class BiShengAdapter(
         override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
             val oldItem = oldList[oldItemPosition]
             val newItem = newList[newItemPosition]
-            // 比较类型和哈希码
-            return oldItem.javaClass == newItem.javaClass && oldItem == newItem
+            
+            // 类型必须相同
+            if (oldItem.javaClass != newItem.javaClass) {
+                return false
+            }
+            
+            // 如果实现了 BiShengDiffable 接口，使用 getItemId 比较
+            if (oldItem is BiShengDiffable && newItem is BiShengDiffable) {
+                return try {
+                    oldItem.getItemId() == newItem.getItemId()
+                } catch (e: Exception) {
+                    // 如果 getItemId 抛出异常，降级为 equals 比较
+                    oldItem == newItem
+                }
+            }
+            
+            // 否则使用 equals() 方法
+            return oldItem == newItem
         }
 
         override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            return oldList[oldItemPosition] == newList[newItemPosition]
+            val oldItem = oldList[oldItemPosition]
+            val newItem = newList[newItemPosition]
+            
+            // 如果实现了 BiShengDiffable 接口，使用 areContentsTheSame 比较
+            if (oldItem is BiShengDiffable && newItem is BiShengDiffable) {
+                return try {
+                    oldItem.areContentsTheSame(newItem)
+                } catch (e: Exception) {
+                    // 如果比较方法抛出异常，降级为 equals 比较
+                    oldItem == newItem
+                }
+            }
+            
+            // 否则使用 equals() 方法
+            return oldItem == newItem
+        }
+
+        override fun getChangePayload(oldItemPosition: Int, newItemPosition: Int): Any? {
+            val oldItem = oldList[oldItemPosition]
+            val newItem = newList[newItemPosition]
+            
+            // 如果实现了 BiShengDiffable 接口，获取变化负载
+            if (oldItem is BiShengDiffable && newItem is BiShengDiffable) {
+                return try {
+                    oldItem.getChangePayload(newItem)
+                } catch (e: Exception) {
+                    // 如果获取负载失败，返回 null 表示全量更新
+                    null
+                }
+            }
+            
+            return super.getChangePayload(oldItemPosition, newItemPosition)
         }
     }
 

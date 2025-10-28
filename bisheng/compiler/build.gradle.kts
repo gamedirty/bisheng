@@ -4,18 +4,18 @@ plugins {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 }
 
 dependencies {
-    implementation(project(mapOf("path" to ":bisheng:annotation")))
+    implementation(project(":bisheng:annotation"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib:${Deps.kotlin_version}")
     implementation("com.squareup:javapoet:1.13.0")
 }

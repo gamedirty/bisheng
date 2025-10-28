@@ -1,7 +1,8 @@
 # BiSheng - 毕升
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.8.22-purple.svg)](https://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9.22-purple.svg)](https://kotlinlang.org)
+[![Android SDK](https://img.shields.io/badge/Android-21%2B-green.svg)](https://developer.android.com)
 
 一个让 RecyclerView 多类型适配器变得简单的 Android 库
 
@@ -207,7 +208,53 @@ class CustomViewHolder : BiShengBaseVH<CustomItem>() {
 3. **数据类必须使用 @VHRef 注解**：每个数据类都需要指定对应的 ViewHolder
 4. **ViewHolder 必须继承 BiShengBaseVH**：并使用泛型指定数据类型
 
+### 💡 增强的 DiffUtil 支持
+
+数据类可以实现 `BiShengDiffable` 接口来自定义比较逻辑：
+
+```kotlin
+@VHRef(UserViewHolder::class)
+data class UserItem(
+    val id: String,
+    val name: String,
+    val avatar: String
+) : BiShengDiffable {
+    
+    override fun getItemId(): Any = id
+    
+    override fun areContentsTheSame(other: Any): Boolean {
+        if (other !is UserItem) return false
+        return name == other.name && avatar == other.avatar
+    }
+    
+    override fun getChangePayload(other: Any): Any? {
+        if (other !is UserItem) return null
+        val changes = mutableMapOf<String, Any>()
+        if (name != other.name) changes["name"] = other.name
+        if (avatar != other.avatar) changes["avatar"] = other.avatar
+        return if (changes.isEmpty()) null else changes
+    }
+}
+```
+
+使用增强的 DiffUtil：
+```kotlin
+adapter.setData(newDataList, useDiffUtil = true)
+// BiShengDiffable 接口会自动被使用，实现精确的增量更新
+```
+
 ## 📝 更新日志
+
+### v2.0.0 (2025)
+- ✅ 升级到 Kotlin 1.9.22
+- ✅ 升级到 Android SDK 34
+- ✅ 升级 Gradle 到 8.9，AGP 到 8.2.2
+- ✅ 升级到 Java 11
+- ✅ 统一使用 Kotlin DSL 构建脚本
+- ✅ 增强 DiffUtil 支持 - 添加 `BiShengDiffable` 接口
+- ✅ 注解改为 RUNTIME 保留，支持更灵活的使用场景
+- ✅ 改进 `onCreateView()` 方法签名，传入 parent 参数
+- ✅ 优化依赖版本管理
 
 ### v1.0.0
 - ✅ 升级到 Kotlin 1.8.22
