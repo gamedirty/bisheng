@@ -1,6 +1,7 @@
 plugins {
-    id("com.android.application")
-    id("kotlin-android")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.kapt)
 }
 
 android {
@@ -21,7 +22,7 @@ android {
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments += mapOf(
-                    "kapt.kotlin.generated" to "$buildDir/generated/source/kapt/$name"
+                    "kapt.kotlin.generated" to "${layout.buildDirectory.get()}/generated/source/kapt/$name"
                 )
             }
         }
@@ -59,15 +60,17 @@ android {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:${Deps.kotlin_version}")
-    implementation("androidx.core:core-ktx:${Deps.androidx_core}")
-    implementation("androidx.appcompat:appcompat:${Deps.androidx_appcompat}")
-    implementation("androidx.recyclerview:recyclerview:${Deps.androidx_recyclerview}")
-    implementation("com.google.android.material:material:${Deps.material}")
-    implementation("androidx.constraintlayout:constraintlayout:${Deps.constraintlayout}")
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.bundles.androidx)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.material)
     
     implementation(project(":bisheng:library"))
-    // 注意: sample 项目使用运行时反射，实际项目中应使用：
-    // kapt(project(":bisheng:compiler"))
+    kapt(project(":bisheng:compiler"))
+    
+    // Testing
+    testImplementation(libs.bundles.testing)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
 }
 

@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: 创建发布
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout 代码
+      uses: actions/checkout@v4
+      
+    - name: 设置 JDK 11
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+        cache: 'gradle'
+        
+    - name: 授予 Gradle 执行权限
+      run: chmod +x ./gradlew
+      
+    - name: 构建 Release 版本
+      run: ./gradlew assembleRelease
+      
+    - name: 运行测试
+      run: ./gradlew test
+      
+    - name: 生成 AAR 文件
+      run: ./gradlew :bisheng:library:bundleReleaseAar
+      
+    - name: 提取版本号
+      id: version
+      run: |
+        echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        
+    - name: 创建 GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Release ${{ steps.version.outputs.VERSION }}
+        body: |
+          ## BiSheng ${{ steps.version.outputs.VERSION }}
+          
+          ### 📦 下载
+          请查看下方的 Assets 部分下载 AAR 文件
+          
+          ### 📝 变更日志
+          请查看 [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/master/CHANGELOG.md)
+          
+          ### 📚 文档
+          请查看 [README.md](https://github.com/${{ github.repository }}/blob/master/readme.md)
+        files: |
+          bisheng/library/build/outputs/aar/*.aar
+          bisheng/library/build/outputs/apk/release/*.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    # 可选：发布到 Maven Central
+    # - name: 发布到 Maven Central
+    #   env:
+    #     MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+    #     MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+    #     SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
+    #     SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+    #     SIGNING_SECRET_KEY: ${{ secrets.SIGNING_SECRET_KEY }}
+    #   run: ./gradlew publishToMavenCentral
+

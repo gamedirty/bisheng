@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("kotlin")
+    alias(libs.plugins.kotlin.jvm)
 }
 
 java {
@@ -15,5 +14,5 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:${Deps.kotlin_version}")
+    implementation(libs.kotlin.stdlib)
 }

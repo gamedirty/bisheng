@@ -123,13 +123,6 @@ class AdapterProcessor : AbstractProcessor() {
                 ParameterizedTypeName.get(classType, WildcardTypeName.subtypeOf(TypeName.OBJECT))
             )
             
-            // 泛型类型：ArrayMap<Class<?>, Integer>
-            val arrayMapClassIntType2 = ParameterizedTypeName.get(
-                arrayMapType,
-                ParameterizedTypeName.get(classType, WildcardTypeName.subtypeOf(TypeName.OBJECT)),
-                integerType
-            )
-            
             val constructor =
                 MethodSpec.constructorBuilder()
                     .apply {
@@ -189,7 +182,7 @@ class AdapterProcessor : AbstractProcessor() {
 
             val viewHolderToLayoutResField =
                 FieldSpec.builder(
-                    arrayMapClassIntType2,
+                    arrayMapClassIntType,
                     "viewHolderToLayoutRes",
                     Modifier.PROTECTED
                 ).initializer("new \$T<>()", arrayMapType)
@@ -199,7 +192,7 @@ class AdapterProcessor : AbstractProcessor() {
                 MethodSpec.methodBuilder("getViewHolderToLayoutRes")
                     .addAnnotation(Override::class.java)
                     .addModifiers(Modifier.PUBLIC)
-                    .returns(arrayMapClassIntType2)
+                    .returns(arrayMapClassIntType)
                     .addStatement("return viewHolderToLayoutRes")
                     .build()
 

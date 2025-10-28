@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("kotlin")
+    alias(libs.plugins.kotlin.jvm)
 }
 
 java {
@@ -16,6 +15,9 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 
 dependencies {
     implementation(project(":bisheng:annotation"))
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:${Deps.kotlin_version}")
-    implementation("com.squareup:javapoet:1.13.0")
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.javapoet)
+    
+    // Testing
+    testImplementation(libs.bundles.testing)
 }

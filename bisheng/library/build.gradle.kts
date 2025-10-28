@@ -1,6 +1,6 @@
 plugins {
-    id("com.android.library")
-    id("kotlin-android")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -35,12 +35,14 @@ android {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:${Deps.kotlin_version}")
-    implementation("androidx.core:core-ktx:${Deps.androidx_core}")
-    implementation("androidx.appcompat:appcompat:${Deps.androidx_appcompat}")
-    implementation("androidx.recyclerview:recyclerview:${Deps.androidx_recyclerview}")
-    implementation("com.google.android.material:material:${Deps.material}")
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.bundles.androidx)
+    implementation(libs.material)
     
     api(project(":bisheng:annotation"))
     lintChecks(project(":bisheng:lint"))
+    
+    // Testing
+    testImplementation(libs.bundles.testing)
+    testImplementation(libs.robolectric)
 }
